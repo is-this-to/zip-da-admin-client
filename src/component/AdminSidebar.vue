@@ -34,8 +34,7 @@ const groupedMenus = computed(() => {
 });
 
 const selectedMenuId = computed(() => {
-  const requestedMenuId =
-    typeof route.query.screen === "string" ? route.query.screen : "dashboard";
+  const requestedMenuId = route.meta.menuId || "dashboard";
 
   return visibleMenus.value.some((menu) => menu.id === requestedMenuId)
     ? requestedMenuId
@@ -46,11 +45,8 @@ const roleNames = computed(() => {
   return authStore.roles.map(adminRoleCode.getAdminRoleCodeName);
 });
 
-const selectMenu = (menuId) => {
-  router.push({
-    path: "/admins",
-    query: menuId === "dashboard" ? {} : { screen: menuId },
-  });
+const selectMenu = (path) => {
+  router.push(path);
 };
 
 const logout = async () => {
@@ -94,7 +90,7 @@ const logout = async () => {
           class="admin-sidebar__menu-button"
           :class="{ 'is-active': selectedMenuId === menu.id }"
           :aria-current="selectedMenuId === menu.id ? 'page' : undefined"
-          @click="selectMenu(menu.id)"
+          @click="selectMenu(menu.path)"
         >
           {{ menu.name }}
         </button>
