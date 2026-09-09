@@ -59,14 +59,8 @@ const adminMenu = Object.freeze([
     roles: ALL_ADMIN_ROLES,
   },
   {
-    id: "admins",
-    name: "관리자 계정",
-    group: "관리자 관리",
-    roles: SUPER_ADMIN_ROLES,
-  },
-  {
-    id: "admin-roles",
-    name: "관리자 권한",
+    id: "admin-accounts-roles",
+    name: "관리자 계정·권한",
     group: "관리자 관리",
     roles: SUPER_ADMIN_ROLES,
   },

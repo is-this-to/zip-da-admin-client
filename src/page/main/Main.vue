@@ -2,6 +2,7 @@
 import { computed } from "vue";
 import { useRoute } from "vue-router";
 import AdminSidebar from "../../component/AdminSidebar.vue";
+import AdminAccountRoleList from "../admin/AdminAccountRoleList.vue";
 import adminMenu from "../../constant/adminMenu.js";
 import { useAdminAuthStore } from "../../store/auth/useAdminAuthStore.js";
 
@@ -33,7 +34,11 @@ const selectedMenu = computed(() => {
         <h1>{{ selectedMenu?.name || "대시보드" }}</h1>
       </section>
 
-      <section class="admin-content__placeholder">
+      <AdminAccountRoleList
+        v-if="selectedMenu?.id === 'admin-accounts-roles'"
+      />
+
+      <section v-else class="admin-content__placeholder">
         <strong>{{ selectedMenu?.name || "대시보드" }}</strong>
         <p>이 메뉴의 상세 화면은 다음 작업 단위에서 구현합니다.</p>
       </section>
