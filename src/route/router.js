@@ -2,6 +2,10 @@ import { createRouter, createWebHistory } from "vue-router";
 import Main from "../page/main/Main.vue";
 import ErrorPage from "../page/error/ErrorPage.vue";
 import AdminSignIn from "../page/auth/AdminSignIn.vue";
+import AdminDashboard from "../page/dashboard/AdminDashboard.vue";
+import AdminAgencyList from "../page/agency/AdminAgencyList.vue";
+import AdminPagePlaceholder from "../page/main/AdminPagePlaceholder.vue";
+import adminMenu from "../constant/adminMenu.js";
 import { useAdminAuthStore } from "../store/auth/useAdminAuthStore.js";
 import { useMyErrorStore } from "../store/error/useMyErrorStore.js";
 
@@ -16,6 +20,20 @@ const setMeta = (requiresAuth, guestOnly, roles = []) => {
   };
 };
 
+const adminChildren = adminMenu.map((menu) => ({
+  path: menu.id,
+  component:
+    {
+      dashboard: AdminDashboard,
+      agencies: AdminAgencyList,
+    }[menu.id] || AdminPagePlaceholder,
+  meta: {
+    ...setMeta(true, false, menu.roles),
+    menuId: menu.id,
+    pageName: menu.name,
+  },
+}));
+
 const routes = [
   {
     path: "/",
@@ -26,6 +44,8 @@ const routes = [
     path: "/admins",
     component: Main,
     meta: setMeta(true, false, ADMIN_ROLES),
+    redirect: "/admins/dashboard",
+    children: adminChildren,
   },
   {
     path: "/admins/sign-in",

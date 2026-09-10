@@ -1,6 +1,4 @@
 <script setup>
-import { computed } from "vue";
-import { useRoute } from "vue-router";
 import AdminSidebar from "../../component/AdminSidebar.vue";
 import AdminAccountRoleList from "../admin/AdminAccountRoleList.vue";
 import adminMenu from "../../constant/adminMenu.js";
@@ -42,6 +40,7 @@ const selectedMenu = computed(() => {
         <strong>{{ selectedMenu?.name || "대시보드" }}</strong>
         <p>이 메뉴의 상세 화면은 다음 작업 단위에서 구현합니다.</p>
       </section>
+      <router-view />
     </main>
   </div>
 </template>
@@ -63,50 +62,9 @@ const selectedMenu = computed(() => {
   overflow-y: auto;
 }
 
-.admin-content__heading p {
-  color: #5f6875;
-  font-size: 13px;
-  font-weight: 500;
-}
-
-.admin-content__heading h1 {
-  margin-top: 38px;
-  color: #0b1220;
-  font-size: 36px;
-  line-height: 1.25;
-  font-weight: 900;
-  letter-spacing: -0.04em;
-}
-
-.admin-content__placeholder {
-  min-height: 260px;
-  margin-top: 48px;
-  padding: 34px;
-  border: 1px solid #d8dde5;
-  border-radius: 12px;
-  background: #f2f5f9;
-}
-
-.admin-content__placeholder strong {
-  color: #111827;
-  font-size: 22px;
-  font-weight: 900;
-}
-
-.admin-content__placeholder p {
-  margin-top: 12px;
-  color: #667085;
-  font-size: 14px;
-}
-
 @media (max-width: 860px) {
   .admin-content {
     padding: 32px 28px;
-  }
-
-  .admin-content__heading h1 {
-    margin-top: 28px;
-    font-size: 30px;
   }
 }
 </style>
