@@ -7,11 +7,19 @@ const adminRoleCode = {
 
 Object.freeze(adminRoleCode);
 
+// 수동 부여 가능 역할
+const assignableAdminRoleCodes = Object.freeze([
+  "CS_ADMIN",
+  "SALES_ADMIN",
+  "SUPER_ADMIN",
+]);
+
 const getAdminRoleCodeName = (code) => {
   return adminRoleCode[code] || code;
 };
 
 export default {
   adminRoleCode,
+  assignableAdminRoleCodes,
   getAdminRoleCodeName,
 };
