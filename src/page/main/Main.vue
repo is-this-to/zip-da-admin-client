@@ -1,6 +1,7 @@
 <script setup>
 import AdminSidebar from "../../component/AdminSidebar.vue";
 import AdminAccountRoleList from "../admin/AdminAccountRoleList.vue";
+import AdminAgencyOperatingStatusList from "../admin/AdminAgencyOperatingStatusList.vue";
 import adminMenu from "../../constant/adminMenu.js";
 import { useAdminAuthStore } from "../../store/auth/useAdminAuthStore.js";
 
@@ -34,6 +35,10 @@ const selectedMenu = computed(() => {
 
       <AdminAccountRoleList
         v-if="selectedMenu?.id === 'admin-accounts-roles'"
+      />
+
+      <AdminAgencyOperatingStatusList
+        v-else-if="selectedMenu?.id === 'agency-status'"
       />
 
       <section v-else class="admin-content__placeholder">
