@@ -1,13 +1,15 @@
 import { createRouter, createWebHistory } from "vue-router";
+import { useAdminAuthStore } from "../store/auth/useAdminAuthStore.js";
+import { useMyErrorStore } from "../store/error/useMyErrorStore.js";
 import Main from "../page/main/Main.vue";
 import ErrorPage from "../page/error/ErrorPage.vue";
+import adminMenu from "../constant/adminMenu.js";
+import AdminPagePlaceholder from "../page/main/AdminPagePlaceholder.vue";
 import AdminSignIn from "../page/auth/AdminSignIn.vue";
 import AdminDashboard from "../page/dashboard/AdminDashboard.vue";
 import AdminAgencyList from "../page/agency/AdminAgencyList.vue";
-import AdminPagePlaceholder from "../page/main/AdminPagePlaceholder.vue";
-import adminMenu from "../constant/adminMenu.js";
-import { useAdminAuthStore } from "../store/auth/useAdminAuthStore.js";
-import { useMyErrorStore } from "../store/error/useMyErrorStore.js";
+import AdminAccountRoleList from "../page/admin/AdminAccountRoleList.vue";
+import AdminAgencyOperatingStatusList from "../page/admin/AdminAgencyOperatingStatusList.vue";
 
 const ADMIN_ROLES = ["CS_ADMIN", "SALES_ADMIN", "SUPER_ADMIN"];
 
@@ -20,19 +22,110 @@ const setMeta = (requiresAuth, guestOnly, roles = []) => {
   };
 };
 
-const adminChildren = adminMenu.map((menu) => ({
-  path: menu.id,
-  component:
-    {
-      dashboard: AdminDashboard,
-      agencies: AdminAgencyList,
-    }[menu.id] || AdminPagePlaceholder,
-  meta: {
+const adminMenuById = new Map(adminMenu.map((menu) => [menu.id, menu]));
+
+const createAdminMeta = (menuId) => {
+  const menu = adminMenuById.get(menuId);
+
+  return {
     ...setMeta(true, false, menu.roles),
     menuId: menu.id,
     pageName: menu.name,
+  };
+};
+
+const adminChildren = [
+  {
+    path: "dashboard",
+    name: "admin-dashboard",
+    component: AdminDashboard,
+    meta: createAdminMeta("dashboard"),
   },
-}));
+  {
+    path: "members",
+    name: "admin-members",
+    component: AdminPagePlaceholder,
+    meta: createAdminMeta("members"),
+  },
+  {
+    path: "member-management",
+    name: "admin-member-management",
+    component: AdminPagePlaceholder,
+    meta: createAdminMeta("member-management"),
+  },
+  {
+    path: "agent-applications",
+    name: "admin-agent-applications",
+    component: AdminPagePlaceholder,
+    meta: createAdminMeta("agent-applications"),
+  },
+  {
+    path: "agencies",
+    name: "admin-agencies",
+    component: AdminAgencyList,
+    meta: createAdminMeta("agencies"),
+  },
+  {
+    path: "agency-status",
+    name: "admin-agency-status",
+    component: AdminAgencyOperatingStatusList,
+    meta: createAdminMeta("agency-status"),
+  },
+  {
+    path: "property-reports",
+    name: "admin-property-reports",
+    component: AdminPagePlaceholder,
+    meta: createAdminMeta("property-reports"),
+  },
+  {
+    path: "properties",
+    name: "admin-properties",
+    component: AdminPagePlaceholder,
+    meta: createAdminMeta("properties"),
+  },
+  {
+    path: "property-history",
+    name: "admin-property-history",
+    component: AdminPagePlaceholder,
+    meta: createAdminMeta("property-history"),
+  },
+  {
+    path: "admin-accounts-roles",
+    name: "admin-accounts-roles",
+    component: AdminAccountRoleList,
+    meta: createAdminMeta("admin-accounts-roles"),
+  },
+  {
+    path: "member-login-history",
+    name: "admin-member-login-history",
+    component: AdminPagePlaceholder,
+    meta: createAdminMeta("member-login-history"),
+  },
+  {
+    path: "admin-login-history",
+    name: "admin-admin-login-history",
+    component: AdminPagePlaceholder,
+    meta: createAdminMeta("admin-login-history"),
+  },
+  {
+    path: "admin-audit-log",
+    name: "admin-admin-audit-log",
+    component: AdminPagePlaceholder,
+    meta: createAdminMeta("admin-audit-log"),
+  },
+  {
+    path: "cs-statistics",
+    name: "admin-cs-statistics",
+    component: AdminPagePlaceholder,
+    meta: createAdminMeta("cs-statistics"),
+  },
+  {
+    path: "sales-statistics",
+    name: "admin-sales-statistics",
+    component: AdminPagePlaceholder,
+    meta: createAdminMeta("sales-statistics"),
+  },
+];
 
 const routes = [
   {

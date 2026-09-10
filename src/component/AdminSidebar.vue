@@ -45,8 +45,14 @@ const roleNames = computed(() => {
   return authStore.roles.map(adminRoleCode.getAdminRoleCodeName);
 });
 
-const selectMenu = (path) => {
-  router.push(path);
+const selectMenu = (menuId) => {
+  const targetRoute = router
+    .getRoutes()
+    .find((routeRecord) => routeRecord.meta.menuId === menuId);
+
+  if (targetRoute?.name) {
+    router.push({ name: targetRoute.name });
+  }
 };
 
 const logout = async () => {
@@ -90,7 +96,7 @@ const logout = async () => {
           class="admin-sidebar__menu-button"
           :class="{ 'is-active': selectedMenuId === menu.id }"
           :aria-current="selectedMenuId === menu.id ? 'page' : undefined"
-          @click="selectMenu(menu.path)"
+          @click="selectMenu(menu.id)"
         >
           {{ menu.name }}
         </button>
