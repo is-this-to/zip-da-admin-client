@@ -29,6 +29,7 @@ const isDetailLoading = ref(false);
 const isSubmitting = ref(false);
 const modalErrorMessage = ref("");
 const reviewMode = ref("detail");
+const selectedDocumentType = ref("");
 
 // 보완 요청 입력값
 const supplementForm = reactive({
@@ -38,6 +39,7 @@ const supplementForm = reactive({
 
 // 승인 입력값
 const approveForm = reactive({ reviewNote: "" });
+const supplementDeadlineMin = ref("");
 
 const statusOptions = computed(() => (
   agentApplicationStatus.agentApplicationStatusCodes.map((code) => ({
@@ -120,14 +122,21 @@ const movePage = (requestedPage) => {
   fetchApplications(requestedPage);
 };
 
-const openReviewModal = async (application) => {
+// 우측 패널 상세 조회
+const openSidePanel = async (application, mode, documentType = "") => {
   selectedApplication.value = application;
   applicationDetail.value = null;
-  reviewMode.value = "detail";
+  reviewMode.value = mode;
+  selectedDocumentType.value = documentType;
   modalErrorMessage.value = "";
   supplementForm.supplementReason = "";
   supplementForm.supplementDeadline = "";
   approveForm.reviewNote = "";
+
+  if (mode === "supplement") {
+    supplementDeadlineMin.value = dayjs().add(1, "minute").format("YYYY-MM-DDTHH:mm");
+  }
+
   isDetailLoading.value = true;
 
   try {
@@ -142,17 +151,46 @@ const openReviewModal = async (application) => {
   }
 };
 
+// 서류 상세 패널 열기
+const openDocumentPanel = (application, documentType) => {
+  openSidePanel(application, "document", documentType);
+};
+
+// 보완 요청 패널 열기
+const openSupplementPanel = (application) => {
+  openSidePanel(application, "supplement");
+};
+
+// 승인 패널 열기
+const openApprovePanel = (application) => {
+  openSidePanel(application, "approve");
+};
+
 const closeReviewModal = (force = false) => {
   if (isSubmitting.value && !force) return;
 
   selectedApplication.value = null;
   applicationDetail.value = null;
   reviewMode.value = "detail";
+  selectedDocumentType.value = "";
   modalErrorMessage.value = "";
 };
 
 const canProcessReview = computed(() => (
   applicationDetail.value?.status === "UNDER_REVIEW"
+));
+
+const selectedDocument = computed(() => (
+  applicationDetail.value?.documents?.find(
+    (document) => document.documentType === selectedDocumentType.value,
+  ) || null
+));
+
+const selectedDocumentLabel = computed(() => formatDocumentType(selectedDocumentType.value));
+const selectedDocumentNumber = computed(() => (
+  selectedDocumentType.value === "BUSINESS_LICENSE"
+    ? applicationDetail.value?.businessRegistrationNo
+    : applicationDetail.value?.agencyRegistrationNo
 ));
 
 const requestSupplement = async () => {
@@ -161,6 +199,10 @@ const requestSupplement = async () => {
   const supplementReason = supplementForm.supplementReason.trim();
   if (!supplementReason || !supplementForm.supplementDeadline) {
     modalErrorMessage.value = "보완 사유와 보완 마감일시를 입력해 주세요.";
+    return;
+  }
+  if (!dayjs(supplementForm.supplementDeadline).isAfter(dayjs())) {
+    modalErrorMessage.value = "보완 마감일시는 현재 시각 이후로 입력해 주세요.";
     return;
   }
 
@@ -280,10 +322,10 @@ onMounted(() => {
               <th>신청 ID</th>
               <th>신청자</th>
               <th>중개소명</th>
-              <th>사업자번호</th>
-              <th>등록번호</th>
+              <th class="business-registration-column">사업자번호</th>
+              <th class="agency-registration-column">등록번호</th>
               <th>상태</th>
-              <th>사업자번호/등록번호 검증</th>
+              <th class="verification-column">사업자번호/등록번호 검증</th>
               <th>신청일</th>
               <th>검토</th>
             </tr>
@@ -299,8 +341,26 @@ onMounted(() => {
               <td class="id-cell">{{ application.applicationId }}</td>
               <td>{{ application.applicantName || "-" }}</td>
               <td class="agency-name-cell">{{ application.agencyName || "-" }}</td>
-              <td>{{ application.businessRegistrationNo || "-" }}</td>
-              <td>{{ application.agencyRegistrationNo || "-" }}</td>
+              <td class="business-registration-column">
+                <button
+                  type="button"
+                  class="table-link"
+                  :disabled="isDetailLoading"
+                  @click="openDocumentPanel(application, 'BUSINESS_LICENSE')"
+                >
+                  {{ application.businessRegistrationNo || "-" }}
+                </button>
+              </td>
+              <td class="agency-registration-column">
+                <button
+                  type="button"
+                  class="table-link"
+                  :disabled="isDetailLoading"
+                  @click="openDocumentPanel(application, 'BROKER_OFFICE_LICENSE')"
+                >
+                  {{ application.agencyRegistrationNo || "-" }}
+                </button>
+              </td>
               <td>
                 <span class="status-badge" :class="applicationStatusClass(application.status)">
                   {{ formatStatus(application.status) }}
@@ -309,15 +369,20 @@ onMounted(() => {
               <td>
                 <div class="verification-badges">
                   <span class="status-badge" :class="verificationStatusClass(application.businessVerificationResult)">
-                    사업자 {{ formatVerificationStatus(application.businessVerificationResult) }}
+                    {{ formatVerificationStatus(application.businessVerificationResult) }}
                   </span>
                   <span class="status-badge" :class="verificationStatusClass(application.agencyRegistrationVerificationResult)">
-                    등록번호 {{ formatVerificationStatus(application.agencyRegistrationVerificationResult) }}
+                    {{ formatVerificationStatus(application.agencyRegistrationVerificationResult) }}
                   </span>
                 </div>
               </td>
               <td>{{ formatSubmittedAt(application.submittedAt) }}</td>
-              <td><button type="button" class="table-action" @click="openReviewModal(application)">검토</button></td>
+              <td>
+                <div class="row-actions">
+                  <button type="button" class="table-action" :disabled="isDetailLoading" @click="openSupplementPanel(application)">보완요청</button>
+                  <button type="button" class="table-action table-action--primary" :disabled="isDetailLoading" @click="openApprovePanel(application)">승인</button>
+                </div>
+              </td>
             </tr>
           </tbody>
         </table>
@@ -344,15 +409,41 @@ onMounted(() => {
       <section class="review-modal" role="dialog" aria-modal="true" aria-labelledby="agent-application-modal-title">
         <header class="modal-heading">
           <h2 id="agent-application-modal-title">
-            {{ reviewMode === "supplement" ? "보완 요청" : reviewMode === "approve" ? "중개사 신청 승인" : "중개사 신청 검토" }}
+            {{ reviewMode === "document" ? "서류 상세보기" : reviewMode === "supplement" ? "보완 요청" : "중개사 신청 승인" }}
           </h2>
-          <p>신청 정보와 외부 검증 결과를 확인합니다.</p>
+          <p>{{ reviewMode === "document" ? "신청 정보와 제출 서류 상태를 확인합니다." : "신청 정보와 외부 검증 결과를 확인합니다." }}</p>
         </header>
 
         <p v-if="isDetailLoading" class="modal-message">신청 상세 정보를 불러오는 중입니다.</p>
         <p v-else-if="modalErrorMessage && !applicationDetail" class="modal-message modal-message--error">{{ modalErrorMessage }}</p>
 
         <template v-else-if="applicationDetail">
+          <template v-if="reviewMode === 'document'">
+            <div class="detail-grid">
+              <div><span>신청 ID</span><strong>{{ applicationDetail.applicationId }}</strong></div>
+              <div><span>신청자</span><strong>{{ applicationDetail.applicantName || "-" }}</strong></div>
+              <div><span>중개소명</span><strong>{{ applicationDetail.agencyName || "-" }}</strong></div>
+              <div><span>{{ selectedDocumentLabel }}</span><strong>{{ selectedDocumentNumber || "-" }}</strong></div>
+            </div>
+
+            <section class="detail-section">
+              <h3>{{ selectedDocumentLabel }} 제출 정보</h3>
+              <div v-if="selectedDocument" class="document-detail-grid">
+                <div><span>서류 ID</span><strong>{{ selectedDocument.documentId }}</strong></div>
+                <div><span>제출일시</span><strong>{{ formatSubmittedAt(selectedDocument.uploadedAt) }}</strong></div>
+                <div><span>확인 상태</span><strong>{{ selectedDocument.verifiedAt ? "확인 완료" : "확인 대기" }}</strong></div>
+                <div><span>확인일시</span><strong>{{ formatSubmittedAt(selectedDocument.verifiedAt) }}</strong></div>
+              </div>
+              <p v-else class="empty-document-message">등록된 {{ selectedDocumentLabel }}이 없습니다.</p>
+              <p class="modal-note">서류 원문 열람은 차순위 기능으로, 현재는 제출 여부와 확인 상태만 표시합니다.</p>
+            </section>
+
+            <div class="modal-actions">
+              <button type="button" class="button button--outline" @click="closeReviewModal">닫기</button>
+            </div>
+          </template>
+
+          <template v-else>
           <div class="detail-grid">
             <div><span>신청 ID</span><strong>{{ applicationDetail.applicationId }}</strong></div>
             <div><span>신청일</span><strong>{{ formatSubmittedAt(applicationDetail.submittedAt) }}</strong></div>
@@ -395,30 +486,38 @@ onMounted(() => {
             <p class="modal-note">서류 원문 열람은 차순위 기능으로, 현재는 제출 여부와 확인 상태만 표시합니다.</p>
           </section>
 
-          <form v-if="reviewMode === 'supplement'" class="review-form" @submit.prevent="requestSupplement">
+          <section v-if="reviewMode === 'supplement' && applicationDetail.status === 'REJECTED'" class="detail-section">
+            <h3>등록된 보완 요청</h3>
+            <div class="supplement-detail">
+              <span>보완 요청 사유</span>
+              <p>{{ applicationDetail.supplementReason || "등록된 보완 요청 사유가 없습니다." }}</p>
+              <span>보완 마감일시</span>
+              <strong>{{ formatSubmittedAt(applicationDetail.supplementDeadline) }}</strong>
+            </div>
+          </section>
+
+          <form v-if="reviewMode === 'supplement' && canProcessReview" class="review-form" @submit.prevent="requestSupplement">
             <label for="supplement-reason">보완 사유</label>
             <textarea id="supplement-reason" v-model="supplementForm.supplementReason" maxlength="500" required placeholder="보완이 필요한 내용을 입력하세요." />
             <label for="supplement-deadline">보완 마감일시</label>
-            <input id="supplement-deadline" v-model="supplementForm.supplementDeadline" type="datetime-local" required />
+            <input id="supplement-deadline" v-model="supplementForm.supplementDeadline" :min="supplementDeadlineMin" type="datetime-local" required />
             <p v-if="modalErrorMessage" class="modal-message modal-message--error">{{ modalErrorMessage }}</p>
-            <div class="modal-actions"><button type="button" class="button button--outline" :disabled="isSubmitting" @click="reviewMode = 'detail'">이전</button><button type="submit" class="button button--primary" :disabled="isSubmitting">{{ isSubmitting ? "처리 중..." : "보완 요청" }}</button></div>
+            <div class="modal-actions"><button type="button" class="button button--outline" :disabled="isSubmitting" @click="closeReviewModal">취소</button><button type="submit" class="button button--primary" :disabled="isSubmitting">{{ isSubmitting ? "처리 중..." : "보완 요청" }}</button></div>
           </form>
 
-          <form v-else-if="reviewMode === 'approve'" class="review-form" @submit.prevent="approveApplication">
+          <form v-else-if="reviewMode === 'approve' && canProcessReview" class="review-form" @submit.prevent="approveApplication">
             <label for="review-note">검토 메모 <small>선택</small></label>
             <textarea id="review-note" v-model="approveForm.reviewNote" maxlength="500" placeholder="승인 검토 메모를 입력하세요." />
             <p class="modal-note">승인하면 신청 상태가 승인으로 변경되고 회원의 공인중개사 역할이 활성화됩니다.</p>
             <p v-if="modalErrorMessage" class="modal-message modal-message--error">{{ modalErrorMessage }}</p>
-            <div class="modal-actions"><button type="button" class="button button--outline" :disabled="isSubmitting" @click="reviewMode = 'detail'">이전</button><button type="submit" class="button button--primary" :disabled="isSubmitting">{{ isSubmitting ? "처리 중..." : "승인" }}</button></div>
+            <div class="modal-actions"><button type="button" class="button button--outline" :disabled="isSubmitting" @click="closeReviewModal">취소</button><button type="submit" class="button button--primary" :disabled="isSubmitting">{{ isSubmitting ? "처리 중..." : "승인" }}</button></div>
           </form>
 
           <div v-else class="modal-actions">
+            <p class="modal-note">심사 중 상태의 신청만 보완 요청 또는 승인할 수 있습니다.</p>
             <button type="button" class="button button--outline" :disabled="isSubmitting" @click="closeReviewModal">닫기</button>
-            <template v-if="canProcessReview">
-              <button type="button" class="button button--outline" @click="reviewMode = 'supplement'">보완 요청</button>
-              <button type="button" class="button button--primary" @click="reviewMode = 'approve'">승인</button>
-            </template>
           </div>
+          </template>
         </template>
 
         <div v-else class="modal-actions"><button type="button" class="button button--outline" @click="closeReviewModal">닫기</button></div>
@@ -449,9 +548,12 @@ onMounted(() => {
 .result-heading strong { color: #174ea6; }
 .result-message { margin-bottom: 14px; padding: 12px 14px; border: 1px solid #efc6c2; color: #b42318; background: #fff4f2; font-size: 13px; }
 .table-wrap { overflow-x: auto; border-top: 2px solid #111827; border-bottom: 1px solid #cfd5dd; }
-table { width: 100%; min-width: 1280px; border-collapse: collapse; table-layout: fixed; }
+table { width: 100%; min-width: 1360px; border-collapse: collapse; table-layout: fixed; }
 th, td { padding: 15px 13px; border-bottom: 1px solid #e1e5ea; color: #313946; font-size: 13px; text-align: center; vertical-align: middle; }
 th { color: #111827; background: #f7f8fa; font-weight: 800; }
+.verification-column { width: 180px; white-space: nowrap; }
+.business-registration-column { width: 120px; }
+.agency-registration-column { width: 190px; white-space: nowrap; }
 tbody tr:last-child td { border-bottom: 0; }
 .id-cell { color: #526071; font-variant-numeric: tabular-nums; }
 .agency-name-cell { color: #111827; font-weight: 800; }
@@ -460,14 +562,18 @@ tbody tr:last-child td { border-bottom: 0; }
 .is-pending, .is-under-review { border-color: #ead7a9; color: #8a6411; background: #fff8e8; }
 .is-approved, .is-matched { border-color: #b9dfc1; color: #237a34; background: #eef8f0; }
 .is-rejected, .is-incorrect-data, .is-mismatched, .is-error { border-color: #efc6c2; color: #b42318; background: #fff2ef; }
-.table-action { padding: 7px 10px; border: 1px solid #8394ad; border-radius: 4px; color: #344054; background: #fff; font-size: 12px; font-weight: 800; }
+.table-link { padding: 0; border: 0; color: #174ea6; background: transparent; font: inherit; font-weight: 800; text-decoration: underline; cursor: pointer; }
+.table-link:disabled { color: #98a2b3; cursor: wait; }
+.row-actions { display: flex; justify-content: center; gap: 5px; }
+.table-action { padding: 7px 9px; border: 1px solid #8394ad; border-radius: 4px; color: #344054; background: #fff; font-size: 12px; font-weight: 800; white-space: nowrap; }
+.table-action--primary { border-color: #111827; color: #fff; background: #111827; }
 .table-message { height: 160px; color: #7a8492; }
 .pagination { display: flex; justify-content: center; gap: 5px; margin-top: 26px; }
 .pagination button { min-width: 38px; height: 38px; padding: 0 10px; border: 1px solid #cfd5dd; color: #374151; background: #fff; cursor: pointer; }
 .pagination button.is-current { border-color: #2f6bff; color: #fff; background: #2f6bff; font-weight: 800; }
 .pagination button:disabled { color: #a2a9b3; background: #f5f6f7; cursor: not-allowed; }
-.modal-backdrop { position: fixed; z-index: 20; inset: 0; display: grid; place-items: center; padding: 24px; background: rgba(15, 23, 42, .48); }
-.review-modal { box-sizing: border-box; width: min(820px, 100%); max-height: calc(100vh - 48px); overflow-y: auto; padding: 30px; border-radius: 12px; background: #fff; box-shadow: 0 24px 54px rgba(15, 23, 42, .28); }
+.modal-backdrop { position: fixed; z-index: 20; inset: 0; background: rgba(15, 23, 42, .48); }
+.review-modal { position: absolute; top: 0; right: 0; box-sizing: border-box; width: min(620px, 100vw); height: 100%; overflow-y: auto; padding: 32px; background: #fff; box-shadow: -18px 0 42px rgba(15, 23, 42, .24); }
 .modal-heading h2 { color: #111827; font-size: 22px; font-weight: 900; }
 .modal-heading p { margin: 8px 0 24px; color: #667085; font-size: 14px; line-height: 1.5; }
 .detail-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1px; overflow: hidden; border: 1px solid #e1e5ea; background: #e1e5ea; }
@@ -479,6 +585,14 @@ tbody tr:last-child td { border-bottom: 0; }
 .verification-detail-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
 .verification-detail-grid > div { border: 1px solid #e1e5ea; }
 .verification-detail-grid small { display: block; margin-top: 6px; color: #667085; font-size: 12px; }
+.document-detail-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1px; overflow: hidden; border: 1px solid #e1e5ea; background: #e1e5ea; }
+.document-detail-grid div { min-width: 0; padding: 13px 14px; background: #fff; }
+.document-detail-grid span { display: block; margin-bottom: 6px; color: #667085; font-size: 12px; }
+.document-detail-grid strong { display: block; overflow: hidden; color: #1f2937; font-size: 13px; text-overflow: ellipsis; white-space: nowrap; }
+.supplement-detail { padding: 16px; border: 1px solid #e1e5ea; background: #f9fafb; }
+.supplement-detail span { display: block; margin-bottom: 6px; color: #667085; font-size: 12px; }
+.supplement-detail p { margin: 0 0 16px; color: #1f2937; font-size: 14px; line-height: 1.55; white-space: pre-wrap; }
+.supplement-detail strong { display: block; color: #1f2937; font-size: 13px; }
 .document-list { margin: 0; padding: 0; list-style: none; border-top: 1px solid #e1e5ea; }
 .document-list li { display: grid; grid-template-columns: minmax(0, 1fr) auto auto; gap: 16px; padding: 12px 4px; border-bottom: 1px solid #e1e5ea; color: #667085; font-size: 12px; }
 .document-list strong { color: #1f2937; font-size: 13px; }
@@ -493,6 +607,7 @@ tbody tr:last-child td { border-bottom: 0; }
 .review-form input { height: 46px; }
 .review-form textarea:focus, .review-form input:focus { border-color: #2f6bff; outline: 2px solid rgba(47, 107, 255, .16); }
 .modal-actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 24px; }
+.modal-actions .modal-note { margin: 0 auto 0 0; }
 @media (max-width: 1280px) { .search-panel { grid-template-columns: repeat(2, minmax(200px, 1fr)); } }
-@media (max-width: 860px) { .page-heading h1 { margin-top: 28px; font-size: 30px; } .search-panel, .detail-grid, .verification-detail-grid { grid-template-columns: 1fr; } .search-actions { justify-content: flex-end; } .document-list li { grid-template-columns: 1fr; gap: 5px; } }
+@media (max-width: 860px) { .page-heading h1 { margin-top: 28px; font-size: 30px; } .review-modal { width: 100vw; padding: 24px; } .search-panel, .detail-grid, .verification-detail-grid, .document-detail-grid { grid-template-columns: 1fr; } .search-actions { justify-content: flex-end; } .document-list li { grid-template-columns: 1fr; gap: 5px; } }
 </style>

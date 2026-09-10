@@ -146,6 +146,12 @@ onMounted(() => {
 
 <template>
   <section class="agency-status-page" aria-live="polite">
+    <header class="page-heading">
+      <p>관리자 화면 &gt; 중개소 관리 &gt; 중개소 영업 상태 관리</p>
+      <h1>중개소 영업 상태 관리</h1>
+      <span>중개소 영업 상태를 확인하고 행별 상태변경 버튼으로 처리합니다.</span>
+    </header>
+
     <form class="search-panel" @submit.prevent="search">
       <div class="search-field">
         <label for="agency-name">중개소명</label>
@@ -182,7 +188,7 @@ onMounted(() => {
             <th>상태 변경일</th>
             <th>변경자</th>
             <th>등록 매물</th>
-            <th>상태변경</th>
+            <th class="status-change-column">상태변경</th>
           </tr>
         </thead>
         <tbody>
@@ -192,7 +198,7 @@ onMounted(() => {
           <tr v-for="agency in agencies" :key="agency.agentId">
             <td class="id-cell">{{ agency.agentId }}</td>
             <td class="agency-name-cell">{{ agency.agencyName || "-" }}</td>
-            <td>
+            <td class="status-change-column">
               <span class="status-badge" :class="`status-badge--${agency.operatingStatus?.toLowerCase()}`">
                 {{ formatStatus(agency.operatingStatus) }}
               </span>
@@ -245,6 +251,13 @@ onMounted(() => {
           <p>{{ selectedAgency.agencyName || `중개사 ID ${selectedAgency.agentId}` }}의 영업 상태를 변경합니다.</p>
         </div>
 
+        <div class="agency-detail-grid">
+          <div><span>중개소명</span><strong>{{ selectedAgency.agencyName || "-" }}</strong></div>
+          <div><span>중개사 ID</span><strong>{{ selectedAgency.agentId }}</strong></div>
+          <div><span>현재 영업 상태</span><strong>{{ formatStatus(selectedAgency.operatingStatus) }}</strong></div>
+          <div><span>변경할 영업 상태</span><strong>{{ formatStatus(changeForm.operatingStatus) }}</strong></div>
+        </div>
+
         <label for="operating-status">영업 상태</label>
         <select id="operating-status" v-model="changeForm.operatingStatus" disabled>
           <option v-for="operatingStatus in OPERATING_STATUS_CODES" :key="operatingStatus" :value="operatingStatus">
@@ -273,8 +286,11 @@ onMounted(() => {
 </template>
 
 <style scoped>
-.agency-status-page { margin-top: 46px; }
-.search-panel { display: flex; align-items: end; gap: 18px; padding: 28px 30px; border-radius: 12px; background: #f2f5f9; }
+.agency-status-page { width: min(100%, 1440px); margin: 0 auto; }
+.page-heading p { color: #5f6875; font-size: 13px; }
+.page-heading h1 { margin-top: 38px; color: #0b1220; font-size: 36px; font-weight: 900; letter-spacing: -0.04em; }
+.page-heading span { display: block; margin-top: 10px; color: #667085; font-size: 14px; }
+.search-panel { display: flex; align-items: end; gap: 18px; margin-top: 46px; padding: 28px 30px; border-radius: 12px; background: #f2f5f9; }
 .search-field { width: min(360px, 100%); }
 .search-field label, .modal label { display: block; color: #1f2937; font-size: 13px; font-weight: 800; }
 .search-field input, .modal select, .modal textarea { box-sizing: border-box; width: 100%; margin-top: 9px; padding: 0 14px; border: 1px solid #aeb7c4; border-radius: 6px; color: #111827; background: #fff; font: inherit; font-size: 14px; }
@@ -293,9 +309,10 @@ onMounted(() => {
 .message { margin: 0 0 14px; padding: 12px 14px; font-size: 13px; }
 .message--error { border: 1px solid #efc6c2; color: #b42318; background: #fff4f2; }
 .table-wrap { overflow-x: auto; border-top: 2px solid #111827; border-bottom: 1px solid #cfd5dd; }
-table { width: 100%; min-width: 1080px; border-collapse: collapse; table-layout: fixed; }
+table { width: 100%; min-width: 1180px; border-collapse: collapse; table-layout: fixed; }
 th, td { padding: 15px 13px; border-bottom: 1px solid #e1e5ea; color: #313946; font-size: 13px; text-align: center; vertical-align: middle; }
 th { color: #111827; background: #f7f8fa; font-weight: 800; }
+.status-change-column { width: 220px; white-space: nowrap; }
 tbody tr:last-child td { border-bottom: 0; }
 .id-cell { color: #526071; font-variant-numeric: tabular-nums; }
 .agency-name-cell { color: #111827; font-weight: 800; }
@@ -303,7 +320,7 @@ tbody tr:last-child td { border-bottom: 0; }
 .status-badge--active { border-color: #b7dfc2; color: #166534; background: #effbf2; }
 .status-badge--suspended { border-color: #f3d496; color: #9a6700; background: #fff7e8; }
 .status-badge--closed { border-color: #efc6c2; color: #b42318; background: #fff4f2; }
-.status-actions { justify-content: center; flex-wrap: wrap; }
+.status-actions { justify-content: center; flex-wrap: nowrap; }
 .table-action { min-width: 54px; padding: 7px 9px; border: 1px solid #8394ad; border-radius: 4px; color: #344054; background: #fff; font-size: 12px; font-weight: 800; cursor: pointer; }
 .table-action.is-current { border-color: #111827; color: #fff; background: #111827; cursor: default; }
 .table-action:disabled { opacity: 1; }
@@ -312,12 +329,16 @@ tbody tr:last-child td { border-bottom: 0; }
 .pagination button { min-width: 38px; height: 38px; padding: 0 10px; border: 1px solid #cfd5dd; color: #374151; background: #fff; cursor: pointer; }
 .pagination button.is-current { border-color: #2f6bff; color: #fff; background: #2f6bff; font-weight: 800; }
 .pagination button:disabled { color: #a2a9b3; background: #f5f6f7; cursor: not-allowed; }
-.modal-backdrop { position: fixed; z-index: 20; inset: 0; display: grid; place-items: center; padding: 24px; background: rgba(15, 23, 42, .48); }
-.modal { box-sizing: border-box; width: min(480px, 100%); max-height: calc(100vh - 48px); overflow-y: auto; padding: 30px; border-radius: 12px; background: #fff; box-shadow: 0 24px 54px rgba(15, 23, 42, .28); }
+.modal-backdrop { position: fixed; z-index: 20; inset: 0; background: rgba(15, 23, 42, .48); }
+.modal { position: absolute; top: 0; right: 0; box-sizing: border-box; width: min(620px, 100vw); height: 100%; overflow-y: auto; padding: 32px; background: #fff; box-shadow: -18px 0 42px rgba(15, 23, 42, .24); }
 .modal-heading h2 { color: #111827; font-size: 22px; font-weight: 900; }
 .modal-heading p { margin: 8px 0 24px; color: #667085; font-size: 14px; line-height: 1.5; }
+.agency-detail-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1px; overflow: hidden; margin-bottom: 22px; border: 1px solid #e1e5ea; background: #e1e5ea; }
+.agency-detail-grid div { min-width: 0; padding: 13px 14px; background: #fff; }
+.agency-detail-grid span { display: block; margin-bottom: 6px; color: #667085; font-size: 12px; }
+.agency-detail-grid strong { display: block; overflow: hidden; color: #1f2937; font-size: 13px; text-overflow: ellipsis; white-space: nowrap; }
 .modal label + select, .modal select + label, .modal label + textarea { margin-top: 9px; }
 .modal select + label { margin-top: 18px; }
 .modal-actions { justify-content: flex-end; margin-top: 20px; }
-@media (max-width: 860px) { .search-panel { align-items: stretch; flex-direction: column; } .search-field { width: 100%; } .search-actions { justify-content: flex-end; } }
+@media (max-width: 860px) { .page-heading h1 { margin-top: 28px; font-size: 30px; } .modal { width: 100vw; padding: 24px; } .agency-detail-grid { grid-template-columns: 1fr; } .search-panel { align-items: stretch; flex-direction: column; } .search-field { width: 100%; } .search-actions { justify-content: flex-end; } }
 </style>
