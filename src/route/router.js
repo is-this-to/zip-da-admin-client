@@ -11,6 +11,7 @@ import AdminAgencyList from "../page/agency/AdminAgencyList.vue";
 import AdminAccountRoleList from "../page/admin/AdminAccountRoleList.vue";
 import AdminAgencyOperatingStatusList from "../page/admin/AdminAgencyOperatingStatusList.vue";
 import AdminAgentApplicationList from "../page/agent/AdminAgentApplicationList.vue";
+import AdminMemberManagement from "../page/member/AdminMemberManagement.vue";
 
 const ADMIN_ROLES = ["CS_ADMIN", "SALES_ADMIN", "SUPER_ADMIN"];
 
@@ -51,7 +52,7 @@ const adminChildren = [
   {
     path: "member-management",
     name: "admin-member-management",
-    component: AdminPagePlaceholder,
+    component: AdminMemberManagement,
     meta: createAdminMeta("member-management"),
   },
   {
