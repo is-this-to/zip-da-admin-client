@@ -7,17 +7,21 @@ export const useAdminAuthStore = defineStore("adminAuthStore", () => {
   const isLoggedIn = ref(false);
   const accessToken = ref("");
   const adminInfo = ref(null);
+  const roles = ref([]);
   const authInitialized = ref(false);
 
   let reissuePromise = null;
 
-  const role = computed(() => {
-    if (!accessToken.value) return null;
+  const role = computed(() => roles.value[0] || null);
+
+  const tokenRoles = computed(() => {
+    if (!accessToken.value) return [];
 
     try {
-      return jwtDecode(accessToken.value).role;
+      const claims = jwtDecode(accessToken.value);
+      return Array.isArray(claims.roles) ? claims.roles : [];
     } catch {
-      return null;
+      return [];
     }
   });
 
@@ -25,12 +29,24 @@ export const useAdminAuthStore = defineStore("adminAuthStore", () => {
     isLoggedIn.value = false;
     accessToken.value = "";
     adminInfo.value = null;
+    roles.value = [];
   };
 
   const setAuthentication = (data) => {
     accessToken.value = data.accessToken;
-    adminInfo.value = data.principal;
-    isLoggedIn.value = true;
+    roles.value = Array.isArray(data.roles) ? data.roles : tokenRoles.value;
+    adminInfo.value = {
+      adminId: data.adminId,
+      passwordChangeRequired: Boolean(data.passwordChangeRequired),
+    };
+    isLoggedIn.value = Boolean(data.accessToken);
+    authInitialized.value = true;
+  };
+
+  const hasRole = (roleCode) => roles.value.includes(roleCode);
+
+  const hasAnyRole = (roleCodes) => {
+    return roleCodes.some(hasRole);
   };
 
   const login = async (loginForm) => {
@@ -73,8 +89,11 @@ export const useAdminAuthStore = defineStore("adminAuthStore", () => {
     isLoggedIn,
     accessToken,
     adminInfo,
+    roles,
     authInitialized,
     role,
+    hasRole,
+    hasAnyRole,
     login,
     reissue,
     logout,

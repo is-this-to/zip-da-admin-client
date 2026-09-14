@@ -7,6 +7,8 @@ export default defineConfig({
 
   // 개발 서버 Proxy 정의
   server: {
+    port: 5174,
+    strictPort: true,
     proxy: {
       '/api': {
         target: 'http://localhost:8080',  // Request 대상 서버 도메인

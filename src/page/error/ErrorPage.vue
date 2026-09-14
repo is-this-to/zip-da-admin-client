@@ -47,12 +47,14 @@ const redirectMain = () => {
       </p>
 
       <MyButton
-        size="middle"
-        color="blue"
-        content="메인 페이지로"
+        size="large"
+        variant="primary"
+        block
         class="main-button"
         @click="redirectMain"
-      />
+      >
+        관리자 화면으로
+      </MyButton>
     </section>
   </main>
 </template>
