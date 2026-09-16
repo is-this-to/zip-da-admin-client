@@ -12,6 +12,7 @@ import AdminAccountRoleList from "../page/admin/AdminAccountRoleList.vue";
 import AdminAgencyOperatingStatusList from "../page/admin/AdminAgencyOperatingStatusList.vue";
 import AdminAgentApplicationList from "../page/agent/AdminAgentApplicationList.vue";
 import AdminMemberManagement from "../page/member/AdminMemberManagement.vue";
+import AdminPropertyRegistrationList from "../page/property/AdminPropertyRegistrationList.vue";
 
 const ADMIN_ROLES = ["CS_ADMIN", "SALES_ADMIN", "SUPER_ADMIN"];
 
@@ -72,6 +73,12 @@ const adminChildren = [
     name: "admin-agency-status",
     component: AdminAgencyOperatingStatusList,
     meta: createAdminMeta("agency-status"),
+  },
+  {
+    path: "property-registration",
+    name: "admin-property-registration",
+    component: AdminPropertyRegistrationList,
+    meta: createAdminMeta("property-registration"),
   },
   {
     path: "property-reports",

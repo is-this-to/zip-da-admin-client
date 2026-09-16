@@ -41,6 +41,12 @@ const adminMenu = Object.freeze([
     roles: SALES_ADMIN_ROLES,
   },
   {
+    id: "property-registration",
+    name: "매물 등록 관리",
+    group: "매물 관리",
+    roles: CS_ADMIN_ROLES,
+  },
+  {
     id: "property-reports",
     name: "허위매물 신고 관리",
     group: "매물 관리",
