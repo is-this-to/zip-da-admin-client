@@ -16,7 +16,6 @@ env:
   # 해당 매니페스트 레파지토리의 경로
   MANIFEST_PATH: zip-da-admin-client
   VITE_API_BASE_URL: ${{ secrets.VITE_API_BASE_URL }}
-  VITE_KAKAO_MAP_APP_KEY: ${{ secrets.VITE_KAKAO_MAP_APP_KEY }}
 
 # 해당 워크플로우가 실행 중 GITHUB_TOKEN에 부여할 권한 설정
 permissions:
@@ -30,6 +29,7 @@ jobs:
   build-and-push:
     # 해당 job을 실행할 GitHub 호스팅 러너의 OS 이미지
     runs-on: ubuntu-22.04
+    environment: VITE_ENV
     steps:
       # Actions 로그에 표시될 step명
       - name: Checkout
