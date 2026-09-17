@@ -64,7 +64,7 @@ const fetchProperties = async () => {
 
   try {
     const response = await adminAxios.get(
-      "/api/admin/property-publication-reviews",
+      "/api/property/admin/property-publication-reviews",
       { params: requestParams() },
     );
     const result = response.data.data;
@@ -129,7 +129,7 @@ const openReview = async (property) => {
 
   try {
     const response = await adminAxios.get(
-      `/api/admin/property-publication-reviews/${property.propertyId}`,
+      `/api/property/admin/property-publication-reviews/${property.propertyId}`,
       { headers: { "X-Audit-Reason": "매물 등록 심사" } },
     );
     const detail = response.data.data;
